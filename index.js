@@ -7,14 +7,11 @@ const { Readable, Transform } = require("node:stream");
 const { google } = require("googleapis");
 
 const app = express();
-const PORT = Number(process.env.PORT || 3000);
+const PORT = Number(process.env.PORT || 3001);
 const DATA_DIRECTORY = path.join(__dirname, "data");
 const FINAL_DATA_FILE = path.join(DATA_DIRECTORY, "final.json");
 const CREDENTIALS_DIRECTORY = path.join(__dirname, "credentials");
-const GOOGLE_CREDENTIALS_FILE = path.join(
-  CREDENTIALS_DIRECTORY,
-  "secret.json",
-);
+const GOOGLE_CREDENTIALS_FILE = path.join(CREDENTIALS_DIRECTORY, "secret.json");
 const GOOGLE_TOKEN_FILE = path.join(CREDENTIALS_DIRECTORY, "token.json");
 const UPLOAD_STATE_FILE = path.join(DATA_DIRECTORY, "upload-state.json");
 
@@ -57,8 +54,7 @@ function readUploadState() {
     const uploadReelUrl =
       typeof state.uploadReelUrl === "string"
         ? state.uploadReelUrl
-        : state.lastUploaded &&
-            typeof state.lastUploaded.reel_url === "string"
+        : state.lastUploaded && typeof state.lastUploaded.reel_url === "string"
           ? state.lastUploaded.reel_url
           : null;
     const datetime =
@@ -110,10 +106,14 @@ function writeUploadState(state) {
       uploadReelUrl: state.uploadReelUrl,
       datetime: state.datetime,
     };
-    fs.writeFileSync(temporaryFile, `${JSON.stringify(checkpoint, null, 2)}\n`, {
-      encoding: "utf8",
-      flag: "w",
-    });
+    fs.writeFileSync(
+      temporaryFile,
+      `${JSON.stringify(checkpoint, null, 2)}\n`,
+      {
+        encoding: "utf8",
+        flag: "w",
+      },
+    );
     fs.renameSync(temporaryFile, UPLOAD_STATE_FILE);
   } catch (error) {
     if (fs.existsSync(temporaryFile)) fs.unlinkSync(temporaryFile);
@@ -151,16 +151,22 @@ function createOAuthClient() {
   );
 
   try {
-    oauth.setCredentials(readJsonFile(GOOGLE_TOKEN_FILE, "YouTube OAuth token"));
+    oauth.setCredentials(
+      readJsonFile(GOOGLE_TOKEN_FILE, "YouTube OAuth token"),
+    );
   } catch (error) {
-    if (!error.message.includes("YouTube OAuth token was not found")) throw error;
+    if (!error.message.includes("YouTube OAuth token was not found"))
+      throw error;
   }
 
   oauth.on("tokens", (tokens) => {
     try {
       saveGoogleTokens(tokens);
     } catch (error) {
-      console.error("[oauth] Could not save refreshed YouTube tokens:", error.message);
+      console.error(
+        "[oauth] Could not save refreshed YouTube tokens:",
+        error.message,
+      );
     }
   });
 
@@ -238,7 +244,8 @@ async function getVideoDownload(targetUrl) {
     throw new Error("Instagram returned an unsupported video host");
   }
 
-  const filename = media.filename || `instagram-${getInstagramShortcode(targetUrl)}.mp4`;
+  const filename =
+    media.filename || `instagram-${getInstagramShortcode(targetUrl)}.mp4`;
   const downloadUrl =
     "/api/download?url=" +
     encodeURIComponent(media.videoUrl) +
@@ -309,7 +316,8 @@ async function uploadRecord(record, job) {
 
 function describeUploadError(error) {
   const response = error.response;
-  const status = Number(response && response.status) || Number(error.code) || null;
+  const status =
+    Number(response && response.status) || Number(error.code) || null;
   const apiError = response && response.data && response.data.error;
   const reason =
     apiError &&
@@ -394,7 +402,10 @@ app.post("/api/convert", async (req, res) => {
   }
 
   try {
-    return res.json({ ok: true, ...(await getVideoDownload(targetUrl.trim())) });
+    return res.json({
+      ok: true,
+      ...(await getVideoDownload(targetUrl.trim())),
+    });
   } catch (error) {
     console.error("[convert]", error.message);
     return res.status(502).json({ error: error.message });
@@ -494,7 +505,9 @@ app.get("/oauth2callback", async (req, res) => {
   }
   oauthState = undefined;
   if (req.query.error) {
-    return res.status(400).send(`YouTube authorization failed: ${req.query.error}`);
+    return res
+      .status(400)
+      .send(`YouTube authorization failed: ${req.query.error}`);
   }
 
   try {
