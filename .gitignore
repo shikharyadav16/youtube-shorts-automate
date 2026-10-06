@@ -1,0 +1,5 @@
+.env
+credentials/secret.json
+credentials/token.json
+data/upload-state.json
+node_modules/

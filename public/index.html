@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#10131a" />
+    <title>YouTube Shorts Uploader</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #10131a;
+        --card: #191e28;
+        --line: #2a3240;
+        --text: #edf1f7;
+        --muted: #98a3b3;
+        --accent: #ff354d;
+        --green: #43d39e;
+        --error: #ff7181;
+      }
+      * { box-sizing: border-box; }
+      body {
+        min-height: 100vh;
+        margin: 0;
+        padding: 32px 16px;
+        display: grid;
+        place-items: center;
+        background: radial-gradient(ellipse at 50% 0%, #252b3a 0, var(--bg) 62%);
+        color: var(--text);
+        font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      main { width: min(100%, 620px); }
+      .brand {
+        margin-bottom: 24px;
+        text-align: center;
+      }
+      .brand-mark {
+        display: inline-grid;
+        width: 48px;
+        height: 34px;
+        place-items: center;
+        margin-bottom: 12px;
+        border-radius: 11px;
+        background: var(--accent);
+        color: white;
+        font-size: 19px;
+      }
+      h1 { margin: 0; font-size: clamp(1.7rem, 6vw, 2.15rem); letter-spacing: -0.04em; }
+      .sub, .hint { color: var(--muted); }
+      .sub { margin: 8px 0 0; }
+      .card {
+        padding: clamp(20px, 5vw, 32px);
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        background: color-mix(in srgb, var(--card) 95%, transparent);
+        box-shadow: 0 24px 80px #0005;
+      }
+      .auth-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding-bottom: 22px;
+        border-bottom: 1px solid var(--line);
+      }
+      .auth-label { font-weight: 650; }
+      .auth-state { color: var(--muted); font-size: 0.88rem; }
+      .auth-state.connected { color: var(--green); }
+      button {
+        min-height: 44px;
+        padding: 10px 16px;
+        border: 0;
+        border-radius: 10px;
+        background: #303949;
+        color: white;
+        font: inherit;
+        font-weight: 650;
+        cursor: pointer;
+        text-decoration: none;
+        transition: filter 0.15s ease, opacity 0.15s ease;
+      }
+      .connect {
+        display: inline-flex;
+        min-height: 38px;
+        align-items: center;
+        padding: 7px 12px;
+        border-radius: 10px;
+        background: #303949;
+        color: white;
+        font-weight: 650;
+        font-size: 0.9rem;
+        text-decoration: none;
+      }
+      button:hover:not(:disabled) { filter: brightness(1.12); }
+      button:disabled { cursor: not-allowed; opacity: 0.48; }
+      form { padding-top: 24px; }
+      label { display: block; margin-bottom: 9px; font-weight: 650; }
+      .input-row { display: flex; gap: 10px; }
+      input {
+        width: 100%;
+        min-width: 0;
+        min-height: 50px;
+        padding: 0 14px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        outline: none;
+        background: #11151c;
+        color: var(--text);
+        font: inherit;
+      }
+      input:focus { border-color: #8b96a8; }
+      .start { flex: 0 0 auto; min-height: 50px; padding-inline: 20px; background: var(--accent); }
+      .hint { margin: 8px 0 0; font-size: 0.86rem; }
+      .progress-section { margin-top: 26px; }
+      .progress-heading {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 9px;
+        font-size: 0.92rem;
+        font-weight: 650;
+      }
+      #progressText { color: var(--muted); text-align: right; }
+      .track { height: 11px; overflow: hidden; border-radius: 20px; background: #303744; }
+      .fill {
+        width: 0;
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #ff354d, #ff7b52);
+        transition: width 0.35s ease;
+      }
+      .current {
+        min-height: 48px;
+        margin: 13px 0 0;
+        color: var(--muted);
+        overflow-wrap: anywhere;
+        font-size: 0.9rem;
+      }
+      .message { min-height: 24px; margin: 12px 0 0; font-size: 0.92rem; }
+      .message.error { color: var(--error); }
+      .message.success { color: var(--green); }
+      .last {
+        margin-top: 20px;
+        padding: 15px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: #121720;
+        font-size: 0.9rem;
+      }
+      .last[hidden] { display: none; }
+      .last-label { display: block; margin-bottom: 5px; color: var(--muted); font-size: 0.8rem; }
+      .last a { color: #9db5ff; }
+      .footnote { margin: 18px 0 0; color: var(--muted); font-size: 0.82rem; }
+      @media (max-width: 460px) {
+        .auth-row { align-items: flex-start; flex-direction: column; }
+        .input-row { align-items: stretch; flex-direction: column; }
+        .start { width: 100%; }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header class="brand">
+        <span class="brand-mark" aria-hidden="true">▶</span>
+        <h1>Shorts uploader</h1>
+        <p class="sub">Queue Instagram videos and upload them to your YouTube channel.</p>
+      </header>
+
+      <section class="card" aria-label="YouTube Shorts automation">
+        <div class="auth-row">
+          <div>
+            <div class="auth-label">YouTube account</div>
+            <div id="authState" class="auth-state" aria-live="polite">Checking connection…</div>
+          </div>
+          <a id="connectLink" class="connect" href="/auth/google">Connect YouTube</a>
+        </div>
+
+        <form id="uploadForm">
+          <label for="count">Number of Shorts to upload</label>
+          <div class="input-row">
+            <input id="count" name="count" type="number" min="1" max="60" step="1" value="1" required />
+            <button class="start" id="startButton" type="submit">Start Automation</button>
+          </div>
+          <p class="hint">Choose a whole number from 1 to 60. Uploading resumes after the last saved Reel in final.json.</p>
+        </form>
+
+        <section class="progress-section" aria-label="Upload progress">
+          <div class="progress-heading">
+            <span>Upload progress</span>
+            <span id="progressText" aria-live="polite">0 / 0</span>
+          </div>
+          <div
+            id="progressTrack"
+            class="track"
+            role="progressbar"
+            aria-label="Shorts upload progress"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-valuenow="0"
+          >
+            <div id="progressFill" class="fill"></div>
+          </div>
+          <p id="currentStatus" class="current" aria-live="polite">Ready when you are.</p>
+          <p id="message" class="message" role="status"></p>
+        </section>
+
+        <div id="lastUploaded" class="last" hidden>
+          <span class="last-label">Last successfully uploaded</span>
+          <span id="lastTitle"></span><br />
+          <time id="lastUploadTime"></time><br />
+          <a id="lastReelLink" target="_blank" rel="noopener noreferrer">Open source Reel</a>
+        </div>
+        <p class="footnote">Videos are uploaded publicly. Titles use the caption (up to 25 words); no thumbnail is uploaded.</p>
+      </section>
+    </main>
+
+    <script>
+      const form = document.getElementById("uploadForm");
+      const countInput = document.getElementById("count");
+      const startButton = document.getElementById("startButton");
+      const connectLink = document.getElementById("connectLink");
+      const authState = document.getElementById("authState");
+      const progressText = document.getElementById("progressText");
+      const progressTrack = document.getElementById("progressTrack");
+      const progressFill = document.getElementById("progressFill");
+      const currentStatus = document.getElementById("currentStatus");
+      const message = document.getElementById("message");
+      const lastUploaded = document.getElementById("lastUploaded");
+      const lastTitle = document.getElementById("lastTitle");
+      const lastUploadTime = document.getElementById("lastUploadTime");
+      const lastReelLink = document.getElementById("lastReelLink");
+      let requestInProgress = false;
+
+      function showMessage(text, kind) {
+        message.textContent = text || "";
+        message.className = `message${kind ? ` ${kind}` : ""}`;
+      }
+
+      function renderLastUpload(item) {
+        if (!item || !item.datetime) {
+          lastUploaded.hidden = true;
+          return;
+        }
+        lastTitle.textContent = item.caption || item.uploadReelUrl || "";
+        const uploadedAt = new Date(item.datetime);
+        lastUploadTime.dateTime = item.datetime;
+        lastUploadTime.textContent = Number.isNaN(uploadedAt.getTime())
+          ? item.datetime
+          : `Uploaded ${uploadedAt.toLocaleString()}`;
+        if (item.uploadReelUrl) {
+          lastReelLink.href = item.uploadReelUrl;
+          lastReelLink.hidden = false;
+        } else {
+          lastReelLink.hidden = true;
+        }
+        lastUploaded.hidden = false;
+      }
+
+      function renderStatus(data) {
+        authState.textContent = data.authenticated
+          ? "Connected"
+          : "Not connected — authorize uploads to continue.";
+        authState.classList.toggle("connected", data.authenticated);
+        connectLink.textContent = data.authenticated
+          ? "Change account"
+          : "Connect YouTube";
+        renderLastUpload(data.lastUploaded);
+
+        const job = data.job;
+        if (!job) {
+          progressText.textContent = "0 / 0";
+          progressFill.style.width = "0%";
+          progressTrack.setAttribute("aria-valuenow", "0");
+          return;
+        }
+
+        const total = job.total || 0;
+        const bytesProgress = job.videoBytesTotal
+          ? Math.min(0.99, job.videoBytesSent / job.videoBytesTotal)
+          : 0;
+        const fractionalItem = job.status === "running" && job.current > job.completed
+          ? bytesProgress
+          : 0;
+        const percent = total
+          ? Math.min(100, ((job.completed + fractionalItem) / total) * 100)
+          : 0;
+
+        progressText.textContent = `${job.completed} / ${total}`;
+        progressFill.style.width = `${percent}%`;
+        progressTrack.setAttribute("aria-valuenow", String(Math.round(percent)));
+        currentStatus.textContent = job.status === "running"
+          ? `${job.message} — ${job.currentTitle || "Preparing video"}`
+          : job.message;
+        startButton.disabled = requestInProgress || job.status === "running";
+        countInput.disabled = requestInProgress || job.status === "running";
+
+        if (job.status === "failed") {
+          if (job.requiresReauth) connectLink.textContent = "Reconnect YouTube";
+          showMessage(job.error || "The upload failed.", "error");
+        } else if (job.status === "completed") {
+          showMessage(job.message, "success");
+        }
+        if (job.lastUploaded) renderLastUpload(job.lastUploaded);
+      }
+
+      async function refreshStatus() {
+        try {
+          const response = await fetch("/api/automation/status");
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.error || "Could not load upload status");
+          renderStatus(data);
+        } catch (error) {
+          showMessage(error.message, "error");
+        }
+      }
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (!form.reportValidity()) return;
+
+        requestInProgress = true;
+        startButton.disabled = true;
+        countInput.disabled = true;
+        showMessage("", "");
+        currentStatus.textContent = "Starting upload queue…";
+
+        try {
+          const response = await fetch("/api/automation/start", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ count: Number(countInput.value) }),
+          });
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.error || `Request failed (${response.status})`);
+          renderStatus({ authenticated: true, lastUploaded: data.job.lastUploaded, job: data.job });
+        } catch (error) {
+          showMessage(error.message, "error");
+          startButton.disabled = false;
+          countInput.disabled = false;
+        } finally {
+          requestInProgress = false;
+          refreshStatus();
+        }
+      });
+
+      if (new URLSearchParams(location.search).get("youtube") === "connected") {
+        showMessage("YouTube account connected.", "success");
+        history.replaceState(null, "", location.pathname);
+      }
+      refreshStatus();
+      window.setInterval(refreshStatus, 1000);
+    </script>
+  </body>
+</html>
